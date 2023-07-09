@@ -9,6 +9,13 @@ edition = "2021"
 name = "log"
 path = "src/main.rs"
 
+[lib]
+name = "daily_log"
+path = "src/lib.rs"
+
 [dependencies]
 clap = { version = "4.3.9", features = ["derive"] }
 color-eyre = "0.6.2"
+directories = "5.0.1"
+serde = { version = "1.0.164", features = ["derive"] }
+toml = "0.7.5"

@@ -14,6 +14,7 @@ name = "daily_log"
 path = "src/lib.rs"
 
 [dependencies]
+chrono = "0.4.26"
 clap = { version = "4.3.9", features = ["derive"] }
 color-eyre = "0.6.2"
 directories = "5.0.1"

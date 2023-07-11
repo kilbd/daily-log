@@ -1,6 +1,8 @@
 use clap::{Parser, Subcommand};
 use color_eyre::eyre::Result;
 
+use daily_log::{config::get_config, log::open_log};
+
 /// A CLI for recording daily tasks, notes, and thoughts.
 #[derive(Debug, Parser)]
 #[clap(name = "log")]
@@ -44,10 +46,11 @@ enum Command {
 fn main() -> Result<()> {
     color_eyre::install()?;
     let cli = Cli::parse();
+    let config = get_config()?;
     match cli.command {
         Command::Close => println!("Close it!"),
         Command::Show { edit: _ } => println!("Show logs for month."),
-        Command::Today { reset: _ } => println!("Write about today!"),
+        Command::Today { reset } => open_log(config, reset)?,
     }
     Ok(())
 }

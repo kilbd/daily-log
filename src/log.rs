@@ -1,12 +1,12 @@
 use std::{
     fs::{rename, File},
-    io::{BufRead, BufReader, Write},
+    io::{BufRead, BufReader, BufWriter, Write},
     os::unix::process::CommandExt,
     path::Path,
 };
 
-use chrono::Local;
-use color_eyre::eyre::Result;
+use chrono::{Days, Local};
+use color_eyre::eyre::{eyre, Result};
 
 use crate::config::Config;
 
@@ -55,5 +55,57 @@ pub fn open_log(config: Config, reset: bool) -> Result<()> {
             read_path.display()
         ))
         .exec();
+    Ok(())
+}
+
+pub fn close_log(config: Config) -> Result<()> {
+    let now = Local::now();
+    let tomorrow = now
+        .checked_add_days(Days::new(1))
+        .ok_or(eyre!("Chrono believes tomorrow does not exist."))?;
+    let month_log_path = Path::new(&config.base_dir).join(format!("{}.md", now.format("%Y-%m")));
+    let today_log_path = Path::new(&config.base_dir).join("today.md");
+    let mut incomplete_tasks: Vec<String> = vec![];
+    // Reading today's log in a block so it's closed afterwards
+    {
+        let today_log = File::options().read(true).open(&today_log_path)?;
+        let today = BufReader::new(&today_log);
+        let month_log = File::options()
+            .append(true)
+            .create(true)
+            .open(month_log_path)?;
+        let mut month = BufWriter::new(&month_log);
+        if month_log.metadata()?.len() == 0 {
+            writeln!(month, "# {}", now.format("%B %Y"))?;
+        }
+        writeln!(month, "\n")?;
+        for line in today.lines() {
+            let line = line?;
+            if line.contains("- [ ]") {
+                incomplete_tasks.push(line);
+            } else {
+                writeln!(month, "{}", line)?;
+            }
+        }
+        dbg!(&incomplete_tasks);
+        writeln!(month, "\n")?;
+    }
+    // Want to pre-create log for tomorrow if any undone tasks
+    if !incomplete_tasks.is_empty() {
+        let tomorrow_log = File::options()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(&today_log_path)?;
+        let mut today = BufWriter::new(tomorrow_log);
+        writeln!(today, "## {}", tomorrow.format("%Y-%m-%d"))?;
+        writeln!(today, "\n")?;
+        writeln!(today, "## Tasks\n")?;
+        for task in incomplete_tasks {
+            writeln!(today, "{}", task)?;
+        }
+        writeln!(today, "\n")?;
+        writeln!(today, "## Notes\n")?;
+    }
     Ok(())
 }

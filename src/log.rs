@@ -1,5 +1,5 @@
 use std::{
-    fs::{rename, File},
+    fs::{self, rename, File},
     io::{BufRead, BufReader, BufWriter, Write},
     os::unix::process::CommandExt,
     path::Path,
@@ -87,7 +87,6 @@ pub fn close_log(config: Config) -> Result<()> {
                 writeln!(month, "{}", line)?;
             }
         }
-        dbg!(&incomplete_tasks);
         writeln!(month, "\n")?;
     }
     // Want to pre-create log for tomorrow if any undone tasks
@@ -106,6 +105,8 @@ pub fn close_log(config: Config) -> Result<()> {
         }
         writeln!(today, "\n")?;
         writeln!(today, "## Notes\n")?;
+    } else {
+        fs::remove_file(&today_log_path)?;
     }
     Ok(())
 }

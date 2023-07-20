@@ -4,7 +4,7 @@ use color_eyre::eyre::{eyre, Result, WrapErr};
 use directories::ProjectDirs;
 use serde::Deserialize;
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Config {
     pub base_dir: String,
     pub editor: Option<String>,

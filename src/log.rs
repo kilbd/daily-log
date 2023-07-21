@@ -1,6 +1,6 @@
 use std::{
     fs::{self, rename, File},
-    io::{BufRead, BufReader, BufWriter, Write},
+    io::{BufRead, BufReader, BufWriter, IsTerminal, Write},
     os::unix::process::CommandExt,
     path::Path,
 };
@@ -107,6 +107,35 @@ pub fn close_log(config: Config) -> Result<()> {
         writeln!(today, "## Notes\n")?;
     } else {
         fs::remove_file(&today_log_path)?;
+    }
+    Ok(())
+}
+
+pub fn show_log(config: Config, edit: bool) -> Result<()> {
+    let now = Local::now();
+    let log_path = Path::new(&config.base_dir).join(format!("{}.md", now.format("%Y-%m")));
+    // Open monthly log for editing if flag was used
+    if edit {
+        std::process::Command::new("bash")
+            .arg("-c")
+            .arg(format!("{} {}", config.editor.unwrap(), log_path.display()))
+            .exec();
+    // If this was a direct call, pipe log to less
+    } else if std::io::stdout().is_terminal() {
+        std::process::Command::new("bash")
+            .arg("-c")
+            .arg(format!(
+                "{} show | less",
+                std::env::current_exe()?.display()
+            ))
+            .exec();
+    // This call is from another command, so just print the log
+    } else {
+        let log = File::options().read(true).open(&log_path)?;
+        let lines = BufReader::new(&log).lines();
+        for line in lines {
+            println!("{}", line?);
+        }
     }
     Ok(())
 }

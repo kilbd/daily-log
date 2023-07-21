@@ -3,7 +3,7 @@ use color_eyre::eyre::Result;
 
 use daily_log::{
     config::get_config,
-    log::{close_log, open_log},
+    log::{close_log, open_log, show_log},
 };
 
 /// A CLI for recording daily tasks, notes, and thoughts.
@@ -52,7 +52,7 @@ fn main() -> Result<()> {
     let config = get_config()?;
     match cli.command {
         Command::Close => close_log(config)?,
-        Command::Show { edit: _ } => println!("Show logs for month."),
+        Command::Show { edit } => show_log(config, edit)?,
         Command::Today { reset } => open_log(config, reset)?,
     }
     Ok(())
